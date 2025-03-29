@@ -10,6 +10,7 @@
 * Bench CLI
 * Education app
 * Erpnext app
+* HRMS app
 
 #### Steps
 
