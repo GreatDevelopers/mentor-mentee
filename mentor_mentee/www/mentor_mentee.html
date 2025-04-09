@@ -6,8 +6,18 @@
 <div class="container mt-4" >
     <h2 class="text-center">Mentor Mentee System</h2>
 
+
     <input type="text" id="searchInput" class="form-control form-control-lg p-6 mt-3 w-75 mx-auto"
            placeholder="Search by name..."
+
+
+    <input type="text" id="searchInput" class="form-control form-control-lg p-6 mt-3 w-75 mx-auto"
+           placeholder="Search by name..."
+
+    <input type="text" id="searchInput" class="form-control mt-3"
+           placeholder="Search by Instructor or Student Name..."
+
+           
            value="{{ search_query | default('') }}">
 
     <div class="row mt-4">
@@ -41,18 +51,18 @@
         </div>
     </div>
 
+
     <nav class="mt-4" id="pagination-section" {% if search_query or total_pages <= 1 %}style="display: none;"{% endif %}>
         <ul class="pagination justify-content-center">
-            <!-- Previous Button -->
             {% if current_page > 1 %}
                 <li class="page-item">
                     <a class="page-link" href="?page={{ current_page - 1 }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
                 </li>
             {% endif %}
 
-            <!-- Page Numbers with Ellipses -->
-            {% set max_buttons = 7 %} <!-- Total buttons to show (including first, last, and ellipses) -->
-            {% set side_buttons = 2 %} <!-- Pages to show on either side of current -->
+            
+            {% set max_buttons = 7 %}
+            {% set side_buttons = 2 %} 
 
             {% if total_pages <= max_buttons %}
                 <!-- If total pages are few, show all -->
@@ -62,19 +72,17 @@
                     </li>
                 {% endfor %}
             {% else %}
-                <!-- First Page -->
+
                 <li class="page-item {% if current_page == 1 %}active{% endif %}">
                     <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">1</a>
                 </li>
 
-                <!-- Ellipsis before current range if needed -->
                 {% if current_page > side_buttons + 2 %}
                     <li class="page-item disabled">
                         <span class="page-link">...</span>
                     </li>
                 {% endif %}
 
-                <!-- Pages around current page -->
                 {% set start_page = [current_page - side_buttons, 2]|max %}
                 {% set end_page = [current_page + side_buttons, total_pages - 1]|min %}
                 {% for p in range(start_page, end_page + 1) %}
@@ -83,27 +91,46 @@
                     </li>
                 {% endfor %}
 
-                <!-- Ellipsis after current range if needed -->
                 {% if current_page < total_pages - side_buttons - 1 %}
                     <li class="page-item disabled">
                         <span class="page-link">...</span>
                     </li>
                 {% endif %}
 
-                <!-- Last Page -->
                 <li class="page-item {% if current_page == total_pages %}active{% endif %}">
                     <a class="page-link" href="?page={{ total_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ total_pages }}</a>
                 </li>
             {% endif %}
 
-            <!-- Next Button -->
             {% if current_page < total_pages %}
                 <li class="page-item">
                     <a class="page-link" href="?page={{ current_page + 1 }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+
+
+    {% if not search_query and total_pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if current_page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ current_page - 1 }}">Previous</a>
+                </li>
+            {% endif %}
+
+            {% for p in range(1, total_pages + 1) %}
+                <li class="page-item {% if p == current_page %}active{% endif %}">
+                    <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                </li>
+            {% endfor %}
+
+            {% if current_page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ current_page + 1 }}">Next</a>
+
                 </li>
             {% endif %}
         </ul>
     </nav>
+
 </div>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -220,6 +247,76 @@ document.addEventListener("DOMContentLoaded", function () {
             updatePage(searchValue, 1);
         }, 500);
     });
+
+
+    {% endif %}
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const detailsList = document.getElementById("details-list");
+
+    const instructorGroups = JSON.parse('{{ instructor_groups | tojson | safe }}');
+    const studentInstructors = JSON.parse('{{ student_instructors | tojson | safe }}');
+
+    document.querySelectorAll(".instructor-item").forEach(item => {
+        item.addEventListener("click", function () {
+            const instructorName = this.dataset.instructor;
+            detailsList.innerHTML = "<p>Loading student groups...</p>";
+
+            if (instructorGroups[instructorName] && instructorGroups[instructorName].length > 0) {
+                detailsList.innerHTML = "";
+                instructorGroups[instructorName].forEach(group => {
+                    let students = group.students.length > 0 ? group.students.join(", ") : "No students assigned.";
+                    detailsList.innerHTML += `
+                        <div class="card mt-3">
+                            <div class="card-header bg-primary text-white">${group.student_group_name}</div>
+                            <div class="card-body">
+                                <p><strong>Students:</strong> ${students}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                detailsList.innerHTML = "<p>No student groups assigned to this instructor.</p>";
+            }
+        });
+    });
+
+    document.querySelectorAll(".student-item").forEach(item => {
+        item.addEventListener("click", function () {
+            const studentName = this.dataset.student;
+            detailsList.innerHTML = "<p>Loading assigned instructors...</p>";
+
+            if (studentInstructors[studentName] && studentInstructors[studentName].length > 0) {
+                detailsList.innerHTML = `<h4>Assigned Instructors</h4>`;
+                studentInstructors[studentName].forEach(instructor => {
+                    detailsList.innerHTML += `
+                        <div class="card mt-3">
+                            <div class="card-header bg-success text-white">${instructor}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                detailsList.innerHTML = "<p>No instructor assigned to this student.</p>";
+            }
+        });
+    });
+
+
+    document.getElementById("searchInput").addEventListener("input", function() {
+        let searchValue = this.value.trim();
+        let url = new URL(window.location.href);
+        
+        if (searchValue) {
+            url.searchParams.set("search", searchValue);
+        } else {
+            url.searchParams.delete("search");
+        }
+        
+        url.searchParams.set("page", 1);
+        window.location.href = url.toString();
+    });
+
 });
 </script>
 {% endblock %}
